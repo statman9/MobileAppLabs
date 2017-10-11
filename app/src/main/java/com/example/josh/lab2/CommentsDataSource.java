@@ -8,7 +8,6 @@ import android.content.ContentValues;
 import java.util.Date;
 import java.util.ArrayList;
 import java.util.List;
-import java.text.SimpleDateFormat;
 
 /**
  * Created by Josh on 10/2/2017.

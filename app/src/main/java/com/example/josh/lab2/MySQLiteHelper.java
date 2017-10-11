@@ -22,7 +22,7 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
     public static final String Column_Comment = "ActivityComment";
     public static final int Database_Version = 1;
     private static final String Database_Create = "create table "
-            + Table_Comments + "(" + Column_ID + " integer primary key autoincrement, "
+            + Table_Comments + " (" + Column_ID + " integer primary key autoincrement, "
             + Column_InputType + " text not null, "
             + Column_ActivityType + " text not null, "
             + Column_Date + " datetime not null, "
