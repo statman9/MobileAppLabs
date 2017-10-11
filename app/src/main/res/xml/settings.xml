@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="Account Preferences"
+        android:key="pref_key_storage_settings">
+        <Preference
+            android:key="account_settings"
+            android:summary="User Profile"
+            android:title="@string/account_pref_activity">
+            <intent
+                android:action="android.intent.action.ACTION_LOCATION_SOURCE_SETTINGS"
+                android:targetPackage="com.example.josh.lab2"
+                android:targetClass="com.example.josh.lab2.AccountSettings"
+                />
+        </Preference>
+        <Preference
+            android:key="pref_key_mms_delete_limit"
+            android:summary="Testing3"
+            android:title="Test3" />
+    </PreferenceCategory>
+</PreferenceScreen>
