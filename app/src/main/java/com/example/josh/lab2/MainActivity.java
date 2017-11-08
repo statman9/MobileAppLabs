@@ -104,17 +104,16 @@ public class MainActivity extends AppCompatActivity {
         String activityTypeStr = "";
 
         Intent intent = new Intent(this, StartTabActivity.class);
-        if (v.getId() != R.id.view_map) {
             Spinner inputType = (Spinner) findViewById(R.id.fragment_input_type);
             Spinner activityType = (Spinner) findViewById(R.id.fragment_activity_type);
             inputTypeStr = inputType.getSelectedItem().toString();
             activityTypeStr = activityType.getSelectedItem().toString();
-            intent.putExtra(INPUT_TYPE, inputTypeStr);
-            intent.putExtra(INPUT_ACTIVITY, activityTypeStr);
-        }
-        else {
-            intent = new Intent(this, MapsActivity.class);
-        }
+
+            if (inputTypeStr.equals("GPS")) {
+                intent = new Intent(this, MapsActivity.class);
+            }
+        intent.putExtra(INPUT_TYPE, inputTypeStr);
+        intent.putExtra(INPUT_ACTIVITY, activityTypeStr);
         startActivity(intent);
     }
     /**
@@ -163,9 +162,6 @@ public class MainActivity extends AppCompatActivity {
                 lv.setAdapter(adapter);
             }
             else if (getArguments().getInt(ARG_SECTION_NUMBER) == 3) {
-                rootView = inflater.inflate(R.layout.fragment_map, container, false);
-            }
-            else if (getArguments().getInt(ARG_SECTION_NUMBER) == 4) {
                 rootView = inflater.inflate(R.layout.fragment_settings, container, false);
             }
 
@@ -212,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public int getCount() {
             // Show 3 total pages.
-            return 4;
+            return 3;
         }
 
         @Override
@@ -223,8 +219,6 @@ public class MainActivity extends AppCompatActivity {
                 case 1:
                     return "HISTORY";
                 case 2:
-                    return "MAP";
-                case 3:
                     return "SETTINGS";
             }
             return null;

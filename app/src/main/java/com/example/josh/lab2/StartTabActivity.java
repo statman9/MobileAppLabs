@@ -17,7 +17,6 @@ import android.widget.TimePicker;
 import android.content.DialogInterface;
 
 import java.util.Calendar;
-import java.util.Date;
 
 
 /**

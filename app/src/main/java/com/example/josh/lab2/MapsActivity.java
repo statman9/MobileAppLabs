@@ -1,7 +1,10 @@
 package com.example.josh.lab2;
 
+import android.content.Intent;
 import android.Manifest;
+import android.view.View;
 import android.content.Context;
+import android.graphics.Color;
 import android.location.Address;
 import android.location.Criteria;
 import android.location.Geocoder;
@@ -23,6 +26,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.io.IOException;
 import java.util.List;
@@ -32,6 +37,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     public Marker whereAmI;
+    public Marker currentLocation;
+    PolylineOptions rectOptions = new PolylineOptions();
+    Polyline polyline;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,12 +62,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
 
-        Location l = locationManager.getLastKnownLocation(provider);
+        Intent intent = new Intent(this, MapsService.class);
+        MapsActivity.this.startService(intent);
 
-        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
-            l = locationManager.getLastKnownLocation(provider);
+        Location l= locationManager.getLastKnownLocation(provider);
+
+        if ( ContextCompat.checkSelfPermission( this, Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
+            //l =;
             if (l != null) {
                 LatLng latlng = fromLocationToLatLng(l);
+                MapsService.locations.add(latlng);
                 whereAmI=mMap.addMarker(new MarkerOptions().position(latlng).icon(BitmapDescriptorFactory.defaultMarker(
                         BitmapDescriptorFactory.HUE_GREEN)));
                 // Zoom in
@@ -67,6 +79,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         17));
 
                 updateWithNewLocation(l);
+
+                currentLocation=mMap.addMarker(new MarkerOptions().position(latlng).icon(BitmapDescriptorFactory.defaultMarker(
+                        BitmapDescriptorFactory.HUE_GREEN)));
             }
         }
 
@@ -84,6 +99,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+    public void saveData(View v) {
+        Intent intent = new Intent();
+        intent.setAction(MapsService.ACTION);
+        intent.putExtra(MapsService.STOP_SERVICE_BROADCAST_KEY, MapsService.RQS_STOP_SERVICE);
+        sendBroadcast(intent);
+
+    }
+
     private void updateWithNewLocation(Location location) {
         TextView myLocationText;
         myLocationText = (TextView)findViewById(R.id.myLocationText);
@@ -91,24 +114,41 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         String latLongString = "No location found";
         String addressString = "No address found";
 
+        Intent intent = new Intent(this, MapsService.class);
+        MapsActivity.this.startService(intent);
+
         if (location != null) {
             // Update the map location.
 
             LatLng latlng=fromLocationToLatLng(location);
+            MapsService.locations.add(latlng);
 
             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latlng,
                     17));
 
 
-            if(whereAmI!=null)
+
+
+            if(whereAmI!=null) {
+                if(polyline != null){
+                    polyline.remove();
+                    polyline = null;
+                }
+                    rectOptions.add(whereAmI.getPosition());
+                    rectOptions.color(Color.RED);
+                    polyline = mMap.addPolyline(rectOptions);
+
                 whereAmI.remove();
+            }
 
             whereAmI=mMap.addMarker(new MarkerOptions().position(latlng).icon(BitmapDescriptorFactory.defaultMarker(
                     BitmapDescriptorFactory.HUE_GREEN)).title("Here I Am."));
 
             double lat = location.getLatitude();
             double lng = location.getLongitude();
-            latLongString = "Lat:" + lat + "\nLong:" + lng;
+            latLongString = "Distance:" + MapsService.TOTAL_DISTANCE + "\nTime:" + lng;
+
+
 
             double latitude = location.getLatitude();
             double longitude = location.getLongitude();

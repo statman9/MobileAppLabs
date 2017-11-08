@@ -19,6 +19,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <meta-data android:name="com.google.android.geo.API_KEY" android:value="AIzaSyAomtMjorpAIKVhd1uw0dUHs87zsX9mZbM"/>
+        <service android:name=".MapsService" />
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
@@ -39,14 +40,6 @@
         </activity>
         <activity
             android:name=".StartTabActivity"
-            android:label="@string/app_name"
-            >
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.example.josh.lab2.MainActivity" />
-        </activity>
-        <activity
-            android:name=".DatabaseActivity"
             android:label="@string/app_name"
             >
             <meta-data
