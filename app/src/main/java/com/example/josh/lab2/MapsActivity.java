@@ -1,23 +1,17 @@
 package com.example.josh.lab2;
 
 import android.content.Intent;
-import android.Manifest;
+import android.app.Fragment;
 import android.view.View;
 import android.content.Context;
 import android.graphics.Color;
-import android.location.Address;
 import android.location.Criteria;
-import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.content.ContextCompat;
-import android.util.Log;
 import android.widget.TextView;
-import android.content.pm.PackageManager;
-import android.support.v4.app.ActivityCompat;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -31,15 +25,16 @@ import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Date;
 import java.util.Locale;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback{
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     public Marker whereAmI;
-    public Marker currentLocation;
     PolylineOptions rectOptions = new PolylineOptions();
     Polyline polyline;
+    private CommentsDataSource datasource = new CommentsDataSource(this);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,32 +53,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         criteria.setBearingRequired(false);
         criteria.setSpeedRequired(false);
         criteria.setCostAllowed(true);
-        String provider = locationManager.GPS_PROVIDER;
-        ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-        ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
+        String provider = locationManager.getBestProvider(criteria, true);
 
         Intent intent = new Intent(this, MapsService.class);
         MapsActivity.this.startService(intent);
 
-        Location l= locationManager.getLastKnownLocation(provider);
+        Location l = locationManager.getLastKnownLocation(provider);
 
-        if ( ContextCompat.checkSelfPermission( this, Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
-            //l =;
-            if (l != null) {
-                LatLng latlng = fromLocationToLatLng(l);
-                MapsService.locations.add(latlng);
-                whereAmI=mMap.addMarker(new MarkerOptions().position(latlng).icon(BitmapDescriptorFactory.defaultMarker(
-                        BitmapDescriptorFactory.HUE_GREEN)));
-                // Zoom in
-                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latlng,
-                        17));
+        LatLng latlng=fromLocationToLatLng(l);
 
-                updateWithNewLocation(l);
+        MapsService.locations.add(latlng);
+        MapsService.times.add(new Date());
 
-                currentLocation=mMap.addMarker(new MarkerOptions().position(latlng).icon(BitmapDescriptorFactory.defaultMarker(
-                        BitmapDescriptorFactory.HUE_GREEN)));
-            }
-        }
+
+        whereAmI=mMap.addMarker(new MarkerOptions().position(latlng).icon(BitmapDescriptorFactory.defaultMarker(
+                BitmapDescriptorFactory.HUE_GREEN)));
+        // Zoom in
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latlng,
+                17));
+
+        updateWithNewLocation(l);
 
         locationManager.requestLocationUpdates(provider, 2000, 10,
                 locationListener);
@@ -92,6 +81,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onResume() {
         super.onResume();
         setUpMapIfNeeded();
+
+        Intent intent = new Intent(this, MapsService.class);
+        MapsActivity.this.startService(intent);
+        MapsService.times.add(new Date());
     }
 
     public static LatLng fromLocationToLatLng(Location location){
@@ -100,10 +93,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     public void saveData(View v) {
-        Intent intent = new Intent();
-        intent.setAction(MapsService.ACTION);
-        intent.putExtra(MapsService.STOP_SERVICE_BROADCAST_KEY, MapsService.RQS_STOP_SERVICE);
-        sendBroadcast(intent);
+        Intent intent = getIntent();
+        datasource = new CommentsDataSource(this);
+        Date datetime = new Date();
+        MapsService.times.add(datetime);
+        long dateTime = datetime.getTime();
+        String inputType = intent.getStringExtra(MainActivity.INPUT_TYPE);
+        String activityType = intent.getStringExtra(MainActivity.INPUT_ACTIVITY);
+        datasource.open();
+        datasource.createComment(inputType, activityType, dateTime, MapsService.addTimes(), (int)MapsService.addLocations(), 0, 0, "");
+        datasource.close();
+        Intent intent2 = new Intent();
+        Intent newIntent = new Intent(this, MainActivity.class);
+        startActivity(newIntent);
+        intent2.setAction(MapsService.ACTION);
+        intent2.putExtra(MapsService.STOP_SERVICE_BROADCAST_KEY, MapsService.RQS_STOP_SERVICE);
+        sendBroadcast(intent2);
 
     }
 
@@ -112,7 +117,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         myLocationText = (TextView)findViewById(R.id.myLocationText);
 
         String latLongString = "No location found";
-        String addressString = "No address found";
 
         Intent intent = new Intent(this, MapsService.class);
         MapsActivity.this.startService(intent);
@@ -125,9 +129,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latlng,
                     17));
-
-
-
 
             if(whereAmI!=null) {
                 if(polyline != null){
@@ -142,43 +143,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
 
             whereAmI=mMap.addMarker(new MarkerOptions().position(latlng).icon(BitmapDescriptorFactory.defaultMarker(
-                    BitmapDescriptorFactory.HUE_GREEN)).title("Here I Am."));
+                    BitmapDescriptorFactory.HUE_GREEN)));
 
-            double lat = location.getLatitude();
-            double lng = location.getLongitude();
-            latLongString = "Distance:" + MapsService.TOTAL_DISTANCE + "\nTime:" + lng;
-
-
-
-            double latitude = location.getLatitude();
-            double longitude = location.getLongitude();
-            Geocoder gc = new Geocoder(this, Locale.getDefault());
-
-            if (!Geocoder.isPresent())
-                addressString = "No geocoder available";
-            else {
-                try {
-                    List<Address> addresses = gc.getFromLocation(latitude, longitude, 1);
-                    StringBuilder sb = new StringBuilder();
-                    if (addresses.size() > 0) {
-                        Address address = addresses.get(0);
-
-                        for (int i = 0; i < address.getMaxAddressLineIndex(); i++)
-                            sb.append(address.getAddressLine(i)).append("\n");
-
-                        sb.append(address.getLocality()).append("\n");
-                        sb.append(address.getPostalCode()).append("\n");
-                        sb.append(address.getCountryName());
-                    }
-                    addressString = sb.toString();
-                } catch (IOException e) {
-                    Log.d("WHEREAMI", "IO Exception", e);
-                }
-            }
+            latLongString = "Distance:" + MapsService.addLocations() + "\nTime:" + MapsService.addTimes();
         }
 
-        myLocationText.setText("Your Current Position is:\n" +
-                latLongString + "\n\n" + addressString);
+        myLocationText.setText(latLongString);
     }
 
 
@@ -213,8 +183,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // Do a null check to confirm that we have not already instantiated the map.
         if (mMap == null) {
             // Try to obtain the map from the SupportMapFragment.
-            ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
-                    .getMapAsync(this);
+            mMap=((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map)).getMap();
             // Check if we were successful in obtaining the map.
             if (mMap != null) {
                 setUpMap();
@@ -230,7 +199,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
-        mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
+        mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)));
         mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
     }
 

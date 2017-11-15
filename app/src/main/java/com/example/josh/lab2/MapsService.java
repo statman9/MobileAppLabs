@@ -1,14 +1,19 @@
 package com.example.josh.lab2;
 
 import android.app.Service;
+import android.os.Bundle;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
 import android.location.Location;
 import android.os.IBinder;
 import android.content.Intent;
-
+import java.math.BigDecimal;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.widget.Toast;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import com.google.android.gms.maps.model.LatLng;
@@ -19,11 +24,15 @@ import com.google.android.gms.maps.model.LatLng;
 
 public class MapsService extends Service {
 
+    public LocationManager locationManager;
+    public MyLocationListener listener;
     final static String ACTION = "NotifyServiceAction";
     final static String STOP_SERVICE_BROADCAST_KEY="StopServiceBroadcastKey";
     final static int RQS_STOP_SERVICE = 1;
-    final static List<LatLng> locations = new ArrayList<LatLng>();
-    final static float TOTAL_DISTANCE = addLocations();
+    public Location previousLocation;
+    final static List<LatLng> locations = new ArrayList<>();
+    final static List<Date> times = new ArrayList<>();
+    Intent intent;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -69,7 +78,27 @@ public class MapsService extends Service {
                 }
             }
         }
+        float milesRatio = (float)0.621371;
+        distance = (distance / 1000) * milesRatio;
+        BigDecimal bd = new BigDecimal(Float.toString(distance));
+        bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP);
+        distance = bd.floatValue();
         return distance;
+    }
+
+    static float addTimes() {
+        float time = 0;
+        if (times.size() > 1) {
+            for (int i = 0; i < times.size(); i++) {
+                float timeAtoB = 0;
+                if (i > 0) {
+                    timeAtoB = ((float)(times.get(i).getTime()-times.get(i-1).getTime()));
+                    timeAtoB = (timeAtoB / (1000*60)) % 60;
+                }
+                time += timeAtoB;
+            }
+        }
+        return time;
     }
 
     public class NotifyServiceReceiver extends BroadcastReceiver {
@@ -82,6 +111,41 @@ public class MapsService extends Service {
             if (rqs == RQS_STOP_SERVICE){
                 stopSelf();
             }
+        }
+    }
+
+    public class MyLocationListener implements LocationListener
+    {
+        public void onLocationChanged(final Location loc)
+        {
+            LatLng latlng=fromLocationToLatLng(loc);
+            locations.add(latlng);
+            Date now = new Date();
+            times.add(now);
+                intent.putExtra("Distance", addLocations());
+                intent.putExtra("Time", addTimes());
+                sendBroadcast(intent);
+        }
+
+        public LatLng fromLocationToLatLng(Location location){
+            return new LatLng(location.getLatitude(), location.getLongitude());
+
+        }
+
+        public void onProviderDisabled(String provider)
+        {
+            Toast.makeText( getApplicationContext(), "Gps Disabled", Toast.LENGTH_SHORT ).show();
+        }
+
+
+        public void onProviderEnabled(String provider)
+        {
+            Toast.makeText( getApplicationContext(), "Gps Enabled", Toast.LENGTH_SHORT).show();
+        }
+
+        public void onStatusChanged(String provider, int status, Bundle bundle)
+        {
+            return;
         }
     }
 }
