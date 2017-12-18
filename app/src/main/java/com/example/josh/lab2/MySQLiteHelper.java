@@ -20,7 +20,9 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
     public static final String Column_Calories = "ActivityCalories";
     public static final String Column_HeartRate = "ActivityHeartRate";
     public static final String Column_Comment = "ActivityComment";
-    public static final int Database_Version = 1;
+    public static final String Column_Latitudes = "ActivityLatitudes";
+    public static final String Column_Longitudes = "ActivityLongitudes";
+    public static final int Database_Version = 2;
     private static final String Database_Create = "create table "
             + Table_Comments + " (" + Column_ID + " integer primary key autoincrement, "
             + Column_InputType + " text not null, "
@@ -30,7 +32,9 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
             + Column_Distance + " integer not null, "
             + Column_Calories + " integer not null, "
             + Column_HeartRate + " integer not null, "
-            + Column_Comment + " text not null"
+            + Column_Comment + " text not null, "
+            + Column_Latitudes + " text, "
+            + Column_Longitudes + " text"
             + ");";
 
     public MySQLiteHelper(Context context) {

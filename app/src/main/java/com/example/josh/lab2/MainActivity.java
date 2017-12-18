@@ -17,11 +17,14 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.ListView;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -43,6 +46,8 @@ public class MainActivity extends AppCompatActivity {
 
     public final static String INPUT_TYPE = "com.example.josh.lab2.INPUT_TYPE";
     public final static String INPUT_ACTIVITY = "com.example.josh.lab2.INPUT_ACTIVITY";
+    public final static String INPUT_LATITUDES = "com.example.josh.lab2.INPUT_LATITUDES";
+    public final static String INPUT_LONGITUDES = "com.example.josh.lab2.INPUT_LONGITUDES";
 
 
     @Override
@@ -158,8 +163,33 @@ public class MainActivity extends AppCompatActivity {
 
                 ListView lv = (ListView) rootView.findViewById(R.id.list);
 
-                ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_list_item_1, values);
+                final ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_list_item_1, values);
                 lv.setAdapter(adapter);
+
+                /*lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view,
+                                            int position, long id) {
+                        // TODO Auto-generated method stub
+                        String latitudes = "";
+                        String longitudes = "";
+                        String itemId = (String)parent.getItemAtPosition(position);
+                        Matcher m = Pattern.compile("\\(([^)]+)\\)").matcher(itemId);
+                        while(m.find()) {
+                            itemId = m.group(1);
+                            itemId = itemId.split(": ")[1];
+                            db = new CommentsDataSource(getActivity());
+                            db.open();
+                            Comment parseComment = db.getComment(Long.parseLong(itemId));
+                            latitudes = parseComment.getLatitudes();
+                            longitudes = parseComment.getActivityLongitudes();
+                        }
+                        Intent intent = new Intent(view.getContext(), MapsActivity.class);
+                        intent.putExtra(INPUT_LATITUDES, latitudes);
+                        intent.putExtra(INPUT_LONGITUDES, longitudes);
+                        startActivity(intent);
+                    }
+                });*/
             }
             else if (getArguments().getInt(ARG_SECTION_NUMBER) == 3) {
                 rootView = inflater.inflate(R.layout.fragment_settings, container, false);

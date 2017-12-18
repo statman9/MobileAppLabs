@@ -3,6 +3,8 @@ package com.example.josh.lab2;
 import java.util.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Map;
+
 /**
  * Created by Josh on 10/2/2017.
  */
@@ -17,6 +19,8 @@ public class Comment {
     private int ActivityCalories;
     private int ActivityHeartRate;
     private String ActivityComment;
+    private String ActivityLatitudes;
+    private String ActivityLongitudes;
 
     public long getId() {
         return id;
@@ -90,6 +94,22 @@ public class Comment {
         this.ActivityComment = comment;
     }
 
+    public String getLatitudes() {
+        return ActivityLatitudes;
+    }
+
+    public void setActivityLatitudes(String latitudes) {
+        this.ActivityLatitudes = latitudes;
+    }
+
+    public String getActivityLongitudes() {
+        return ActivityLongitudes;
+    }
+
+    public void setActivityLongitudes(String longitudes) {
+        this.ActivityLongitudes = longitudes;
+    }
+
     @Override
     public String toString() {
         // Test
@@ -113,7 +133,8 @@ public class Comment {
         if (ActivityDateTime != null) {
             activityDate = df.format(ActivityDateTime);
         }
-        String activity = InputType + ": " +
+        String activity = "(ID: " + id + ")" +
+                InputType + ": " +
                 ActivityType + ", " +
                 activityDate + "\n" +
                 ActivityDistance + " Miles, " +

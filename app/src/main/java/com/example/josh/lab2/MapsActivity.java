@@ -11,6 +11,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
+import android.widget.Button;
 import android.widget.TextView;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -24,6 +25,7 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Date;
 import java.util.Locale;
@@ -55,27 +57,49 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         criteria.setCostAllowed(true);
         String provider = locationManager.getBestProvider(criteria, true);
 
-        Intent intent = new Intent(this, MapsService.class);
-        MapsActivity.this.startService(intent);
+        Intent prevIntent = getIntent();
 
-        Location l = locationManager.getLastKnownLocation(provider);
+        if (prevIntent.getStringExtra(MainActivity.INPUT_LATITUDES) != null) {
+            Button myButton = (Button)findViewById(R.id.saveButton);
+            myButton.setEnabled(false);
+            List<Location> locations = new ArrayList<>();
+            String[] latitudes = prevIntent.getStringExtra(MainActivity.INPUT_LATITUDES).split(",");
+            String[] longitudes = prevIntent.getStringExtra(MainActivity.INPUT_LATITUDES).split(",");
+            for (int i = 0; i < latitudes.length; i++) {
+                Location l = new Location("");
+                Double latitude = Double.parseDouble(latitudes[i]);
+                Double longitude = Double.parseDouble(longitudes[i]);
+                l.setLatitude(latitude);
+                l.setLongitude(longitude);
+                locations.add(l);
+            }
+            for (int i = 0; i < locations.size(); i++) {
+                updateWithNewLocation(locations.get(i));
+            }
+        }
+        else {
+            Intent intent = new Intent(this, MapsService.class);
+            MapsActivity.this.startService(intent);
 
-        LatLng latlng=fromLocationToLatLng(l);
+            Location l = locationManager.getLastKnownLocation(provider);
 
-        MapsService.locations.add(latlng);
-        MapsService.times.add(new Date());
+            LatLng latlng = fromLocationToLatLng(l);
+
+            MapsService.locations.add(latlng);
+            MapsService.times.add(new Date());
 
 
-        whereAmI=mMap.addMarker(new MarkerOptions().position(latlng).icon(BitmapDescriptorFactory.defaultMarker(
-                BitmapDescriptorFactory.HUE_GREEN)));
-        // Zoom in
-        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latlng,
-                17));
+            whereAmI = mMap.addMarker(new MarkerOptions().position(latlng).icon(BitmapDescriptorFactory.defaultMarker(
+                    BitmapDescriptorFactory.HUE_GREEN)));
+            // Zoom in
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latlng,
+                    17));
 
-        updateWithNewLocation(l);
+            updateWithNewLocation(l);
 
-        locationManager.requestLocationUpdates(provider, 2000, 10,
-                locationListener);
+            locationManager.requestLocationUpdates(provider, 2000, 10,
+                    locationListener);
+        }
     }
     @Override
     protected void onResume() {
@@ -100,8 +124,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         long dateTime = datetime.getTime();
         String inputType = intent.getStringExtra(MainActivity.INPUT_TYPE);
         String activityType = intent.getStringExtra(MainActivity.INPUT_ACTIVITY);
+        String longitudes = "";
+        String latitudes = "";
+        for (int i = 1; i < MapsService.locations.size(); i++) {
+            if (i != 1) {
+                longitudes += "," + MapsService.locations.get(i).longitude;
+                latitudes += "," + MapsService.locations.get(i).latitude;
+            }
+            else {
+                longitudes += MapsService.locations.get(i).longitude;
+                latitudes += MapsService.locations.get(i).latitude;
+            }
+        }
         datasource.open();
-        datasource.createComment(inputType, activityType, dateTime, MapsService.addTimes(), (int)MapsService.addLocations(), 0, 0, "");
+        datasource.createComment(inputType, activityType, dateTime, MapsService.addTimes(), (int)MapsService.addLocations(), 0, 0, "", latitudes, longitudes);
         datasource.close();
         Intent intent2 = new Intent();
         Intent newIntent = new Intent(this, MainActivity.class);
@@ -183,7 +219,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // Do a null check to confirm that we have not already instantiated the map.
         if (mMap == null) {
             // Try to obtain the map from the SupportMapFragment.
-            mMap=((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map)).getMap();
+            SupportMapFragment map = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+            map.getMapAsync(this);
             // Check if we were successful in obtaining the map.
             if (mMap != null) {
                 setUpMap();

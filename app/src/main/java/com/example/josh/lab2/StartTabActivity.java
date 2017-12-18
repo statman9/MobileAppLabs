@@ -165,7 +165,7 @@ public class StartTabActivity extends ListActivity {
         String inputType = intent.getStringExtra(MainActivity.INPUT_TYPE);
         String activityType = intent.getStringExtra(MainActivity.INPUT_ACTIVITY);
         datasource.open();
-        datasource.createComment(inputType, activityType, dateTime, activityDuration, activityDistance, activityCalories, activityHeartRate, comment);
+        datasource.createComment(inputType, activityType, dateTime, activityDuration, activityDistance, activityCalories, activityHeartRate, comment, null, null);
         datasource.close();
         Intent newIntent = new Intent(this, MainActivity.class);
         startActivity(newIntent);

@@ -24,7 +24,10 @@ public class CommentsDataSource {
             MySQLiteHelper.Column_Distance,
             MySQLiteHelper.Column_Calories,
             MySQLiteHelper.Column_HeartRate,
-            MySQLiteHelper.Column_Comment};
+            MySQLiteHelper.Column_Comment,
+            MySQLiteHelper.Column_Latitudes,
+            MySQLiteHelper.Column_Longitudes
+    };
 
     private static final String TAG = "DBDemo";
 
@@ -40,7 +43,7 @@ public class CommentsDataSource {
         dbHelper.close();
     }
 
-    public Comment createComment(String inputType, String activityType, long activityDateTime, double activityDuration, int activityDistance, int activityCalories, int activityHeartRate, String comment) {
+    public Comment createComment(String inputType, String activityType, long activityDateTime, double activityDuration, int activityDistance, int activityCalories, int activityHeartRate, String comment, String latitudes, String longitues) {
         ContentValues values = new ContentValues();
         values.put(MySQLiteHelper.Column_Comment, comment);
         values.put(MySQLiteHelper.Column_InputType, inputType);
@@ -50,6 +53,8 @@ public class CommentsDataSource {
         values.put(MySQLiteHelper.Column_Duration, activityDuration);
         values.put(MySQLiteHelper.Column_Distance, activityDistance);
         values.put(MySQLiteHelper.Column_HeartRate, activityHeartRate);
+        values.put(MySQLiteHelper.Column_Latitudes, latitudes);
+        values.put(MySQLiteHelper.Column_Longitudes, longitues);
         long insertId = db.insert(
                 MySQLiteHelper.Table_Comments,
                 null,
@@ -72,6 +77,15 @@ public class CommentsDataSource {
     public void deleteAllComments() {
             System.out.println("All comments have been deleted.");
             db.delete(MySQLiteHelper.Table_Comments, null, null);
+    }
+
+    public Comment getComment(long id) {
+        Cursor cursor = db.query(MySQLiteHelper.Table_Comments, allColumns, MySQLiteHelper.Column_ID + " = " + id, null, null, null, null);
+        cursor.moveToFirst();
+        Comment comment = cursorToComment(cursor);
+
+        cursor.close();
+        return comment;
     }
 
     public List<String> getAllComments() {
@@ -100,6 +114,8 @@ public class CommentsDataSource {
         comment.setActivityCalories(cursor.getInt(6));
         comment.setActivityHeartRate(cursor.getInt(7));
         comment.setComment(cursor.getString(8));
+        comment.setActivityLatitudes(cursor.getString(9));
+        comment.setActivityLongitudes(cursor.getString(10));
         return comment;
     }
 }
