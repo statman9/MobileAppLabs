@@ -5,9 +5,17 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.content.Context;
 import android.content.ContentValues;
+import android.renderscript.Sampler;
+
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
+import java.security.Key;
 import java.util.Date;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Josh on 10/2/2017.
@@ -43,7 +51,7 @@ public class CommentsDataSource {
         dbHelper.close();
     }
 
-    public Comment createComment(String inputType, String activityType, long activityDateTime, double activityDuration, int activityDistance, int activityCalories, int activityHeartRate, String comment, String latitudes, String longitues) {
+    public Comment createComment(String inputType, String activityType, long activityDateTime, double activityDuration, int activityDistance, int activityCalories, int activityHeartRate, String comment, String latitudes, String longitudes) {
         ContentValues values = new ContentValues();
         values.put(MySQLiteHelper.Column_Comment, comment);
         values.put(MySQLiteHelper.Column_InputType, inputType);
@@ -54,16 +62,36 @@ public class CommentsDataSource {
         values.put(MySQLiteHelper.Column_Distance, activityDistance);
         values.put(MySQLiteHelper.Column_HeartRate, activityHeartRate);
         values.put(MySQLiteHelper.Column_Latitudes, latitudes);
-        values.put(MySQLiteHelper.Column_Longitudes, longitues);
+        values.put(MySQLiteHelper.Column_Longitudes, longitudes);
         long insertId = db.insert(
                 MySQLiteHelper.Table_Comments,
                 null,
                 values
         );
+        Map<String, Map<String, String>> record = new HashMap<>();
         Cursor cursor = db.query(MySQLiteHelper.Table_Comments, allColumns, MySQLiteHelper.Column_ID + " = " + insertId, null, null, null, null);
         cursor.moveToFirst();
         Comment newComment = cursorToComment(cursor);
+        Map<String, String> attributes = new HashMap();
+        attributes.put("ID", String.valueOf(insertId));
+        attributes.put(MySQLiteHelper.Column_ActivityType, activityType);
+        attributes.put(MySQLiteHelper.Column_InputType, inputType);
+        attributes.put(MySQLiteHelper.Column_Calories, String.valueOf(activityCalories));
+        attributes.put(MySQLiteHelper.Column_Comment, comment);
+        attributes.put(MySQLiteHelper.Column_Date, String.valueOf(activityDateTime));
+        attributes.put(MySQLiteHelper.Column_Distance, String.valueOf(activityDistance));
+        attributes.put(MySQLiteHelper.Column_Duration, String.valueOf(activityDuration));
+        attributes.put(MySQLiteHelper.Column_HeartRate, String.valueOf(activityHeartRate));
+        attributes.put(MySQLiteHelper.Column_Latitudes, latitudes);
+        attributes.put(MySQLiteHelper.Column_Longitudes, longitudes);
 
+        record.put("Record", attributes);
+
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference myRef = database.getReference("Records");
+
+        myRef.child("id"+String.valueOf(insertId)).setValue(record);
+        
         cursor.close();
         return newComment;
     }
